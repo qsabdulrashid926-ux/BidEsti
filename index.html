@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BidEst QTO — NRM2 Take-Off</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ground:#E4E6EC;--surface:#FBFBFD;--surface2:#F1F2F7;--line:#CBCFDD;--line2:#DDE0EB;
+  --ink:#111420;--ink2:#4A5064;--ink3:#787F94;
+  --accent:#26356B;--accent2:#3C509A;--accent-soft:#DCE1F1;
+  --input:#FFF9D6;--calc:#EEF0F5;--warn:#8A5B12;--warn-soft:#F4E7CE;
+  --f-ui:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-num:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --r:5px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0D0F16;--surface:#161A24;--surface2:#1D222E;--line:#2C3242;--line2:#232838;
+  --ink:#E4E7F0;--ink2:#98A0B6;--ink3:#6C7488;--accent:#8FA0E4;--accent2:#A9B6EE;--accent-soft:#1B2140;
+  --input:#2A2714;--calc:#1D222E;--warn:#D9A75A;--warn-soft:#2E2410;}}
+:root[data-theme="dark"]{
+  --ground:#0D0F16;--surface:#161A24;--surface2:#1D222E;--line:#2C3242;--line2:#232838;
+  --ink:#E4E7F0;--ink2:#98A0B6;--ink3:#6C7488;--accent:#8FA0E4;--accent2:#A9B6EE;--accent-soft:#1B2140;
+  --input:#2A2714;--calc:#1D222E;--warn:#D9A75A;--warn-soft:#2E2410;}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--ground);color:var(--ink);font:13.5px/1.5 var(--f-ui);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+#app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+#rail{background:var(--surface);border-right:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto;padding:16px 10px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px 14px;border-bottom:1px solid var(--line2);margin-bottom:10px}
+.brand b{display:grid;place-items:center;width:32px;height:32px;border:1.5px solid var(--accent);color:var(--accent);border-radius:4px;font-size:12px}
+.brand div{line-height:1.2}.brand strong{font-size:15px}.brand small{display:block;color:var(--ink3);font-size:11px}
+.navgrp{font-size:11px;color:var(--ink3);margin:12px 8px 4px;font-weight:600}
+.nav{display:flex;gap:8px;align-items:center;width:100%;border:0;background:none;padding:6px 8px;border-radius:var(--r);text-align:left;cursor:pointer}
+.nav:hover{background:var(--surface2)}.nav.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav .c{font-family:var(--f-num);font-size:11px;color:var(--ink3);min-width:34px}
+main{padding:20px 26px 60px;min-width:0}
+.top{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}
+.top h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.top p{margin:4px 0 0;color:var(--ink2);max-width:70ch}
+.kpis{display:flex;gap:18px;flex-wrap:wrap}
+.kpi b{display:block;font-family:var(--f-num);font-size:15px}.kpi span{font-size:11px;color:var(--ink3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:16px}
+.card>header{padding:11px 14px;border-bottom:1px solid var(--line2);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.card>header h2{margin:0;font-size:14px;font-weight:600}.card>header span{color:var(--ink3);font-size:12px}
+.pad{padding:14px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 16px}
+.kv label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink2)}
+.kv input{border:1px solid var(--line);background:var(--input);border-radius:4px;padding:6px 8px}
+.kv input.n{font-family:var(--f-num);text-align:right}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{background:var(--accent);color:#fff;font-weight:600;text-align:left;padding:6px 8px;white-space:nowrap;font-size:11.5px}
+:root[data-theme="dark"] th{color:#0D0F16}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) th{color:#0D0F16}}
+td{border-bottom:1px solid var(--line2);padding:3px 6px;vertical-align:middle}
+td.n,th.n{text-align:right;font-family:var(--f-num);white-space:nowrap}
+td input,td select{width:100%;min-width:64px;border:1px solid transparent;background:var(--input);border-radius:3px;padding:4px 6px}
+td input:focus,td select:focus{border-color:var(--accent2)}
+td input.n{font-family:var(--f-num);text-align:right}
+td.calc{background:var(--calc);color:var(--ink2)}
+td.desc input{min-width:240px}
+.boq td:nth-child(2){min-width:230px}
+tr.item td{background:var(--accent-soft);font-weight:600}
+tr.tot td{border-top:1.5px solid var(--accent);font-weight:700}
+tr.line td:first-child{padding-left:22px;color:var(--ink2)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:6px 11px;cursor:pointer}
+.btn:hover{border-color:var(--accent2)}.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#0D0F16}
+.btn.x{border:0;background:none;color:var(--ink3);padding:2px 6px}.btn.x:hover{color:#B3261E}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{font-size:12px;color:var(--ink3);margin:0 0 10px}
+.flag{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:8px 12px;font-size:12.5px;margin-bottom:14px}
+.why{font-size:11.5px;color:var(--ink3);font-weight:400}
+.empty{color:var(--ink3);padding:18px;text-align:center}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 16px;border-radius:20px;font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+@media (max-width:820px){
+  #app{grid-template-columns:1fr}
+  #rail{position:sticky;top:env(safe-area-inset-top,0px);height:auto;z-index:5;display:flex;overflow-x:auto;padding:8px;gap:4px;border-right:0;border-bottom:1px solid var(--line)}
+  .brand,.navgrp{display:none}.nav{white-space:nowrap;width:auto}.nav .c{display:none}
+  main{padding:14px 12px 60px}
+}
+@media print{#rail,.noprint{display:none}#app{display:block}main{padding:0}.card{border:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><nav id="rail"></nav><main id="main"></main></div>
+<div id="toast"></div>
+<input type="file" id="fileIn" accept=".json" hidden>
+<script>
+/* =====================================================================
+   BidEst QTO — NRM2 take-off. All data lives in the browser.
+   ===================================================================== */
+const VERSION='2.0';
+const KEY='bidest-qto-v2';
+const $=s=>document.querySelector(s);
+function el(t,a,...k){const e=document.createElement(t);
+  for(const x in (a||{})){const v=a[x];if(v==null||v===false)continue;
+    if(x.startsWith('on'))e.addEventListener(x.slice(2),v);else if(x==='class')e.className=v;else e.setAttribute(x,v===true?'':v);}
+  k.flat(9).forEach(c=>{if(c==null||c===false)return;e.append(c.nodeType?c:document.createTextNode(String(c)));});return e;}
+const num=v=>{if(v===''||v==null)return null;const n=parseFloat(v);return isFinite(n)?n:null;};
+const N=v=>num(v)||0;
+const U=(v,d)=>num(v)===null?d:num(v);
+const blank=v=>v===''||v==null;
+const f=(v,d=2)=>(v==null||!isFinite(v)||Math.abs(v)<1e-9)?'–':Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200);}
+
+/* ---------------- page-one definitions ---------------- */
+const KV={
+ meta:{t:'Project',s:'Printed on the BOQ',f:[['name','Project name','t'],['location','Location','t'],['client','Client','t'],['drawings','Drawing references','t'],['standard','Method of measurement','t'],['currency','Currency','t']]},
+ lv:{t:'Levels and measurement conventions',s:'All levels in metres relative to project datum',f:[
+  ['GS_SSL','Top of grade slab (FFL / SSL)'],['EGL','Existing ground level (EGL)'],['BOF_def','Bottom of footing — typical BOF'],
+  ['Blind_T','Blinding thickness'],['Blind_P','Blinding projection each side'],['WorkSp','Working space beyond blinding, each side'],
+  ['GS_T','Grade slab thickness (typical)'],['Hc_T','Sub-base under grade slab'],['Bulk','Bulking factor for disposal'],
+  ['DedMin','Deduct openings larger than (m²)'],['SiteArea','Site clearance area (m²)'],['RoofUp','Roof waterproofing upstand height']]},
+ typ:{t:'Typical dimensions',s:'Used wherever a schedule cell is left blank',f:[
+  ['Ft_L','Footing length'],['Ft_W','Footing width'],['Ft_D','Footing depth'],['Nk_b','Neck b'],['Nk_d','Neck d'],
+  ['TB_b','Tie / grade beam width'],['TB_D','Tie / grade beam depth'],['Col_b','Column b'],['Col_d','Column d'],['Col_H','Column height'],
+  ['SW_t','Shear wall thickness'],['SW_H','Shear wall height'],['Bm_b','Beam width'],['Bm_D','Beam overall depth'],
+  ['Slab_T','Suspended / roof slab thickness'],['Wall_H','Blockwork height']]},
+ spec:{t:'Specifications',s:'These words appear in the BOQ descriptions',f:[
+  ['Blind','Blinding concrete','t'],['Sub','Substructure concrete','t'],['Sup','Superstructure concrete','t'],['Rebar','Reinforcement','t'],
+  ['WPU','Waterproofing under footings and beams','t'],['WPA','Waterproofing around footings, necks, beams','t'],['Poly','Sheet under grade slab','t'],
+  ['Hc','Sub-base','t'],['Roof','Roof waterproofing','t'],['Ins','Roof insulation','t'],['Plast','Internal plaster','t'],['Rend','External render','t'],
+  ['PaintI','Internal paint','t'],['PaintE','External paint','t'],['WTile','Wall tiling','t'],['Skirt','Skirting','t']]},
+ rb:{t:'Reinforcement densities (kg/m³)',s:'Estimated — replace with bar-schedule totals before tender',f:[
+  ['Ft','Footings'],['Nk','Necks'],['TB','Tie beams'],['GB','Grade beams'],['Col','Columns'],['SW','Shear walls'],['Bm','Beams'],['Slab','Slabs'],['St','Stairs']]}
+};
+/* column: [key, header, kind]; kind: t text, n number, s:<opts> select */
+const TB={
+ ft:{t:'Footing schedule',s:'Excavation = EGL to (BOF − blinding). Strip footings: enter the total run as length.',c:[['mk','Mark','t'],['ty','Type','s:Isolated,Combined,Strip,Raft'],['nr','Nr','n'],['L','L (m)','n'],['W','W (m)','n'],['D','D (m)','n'],['bof','BOF (m)','n']],
+   calc:[['Exc. depth',r=>r._xd,3]]},
+ nk:{t:'Neck / stub columns',s:'Height from top of the named footing to the top level (blank = underside of grade slab).',c:[['mk','Mark','t'],['on','On footing','t'],['nr','Nr','n'],['b','b (m)','n'],['d','d (m)','n'],['top','Top level (m)','n']],
+   calc:[['Height',r=>r._h,3],['Below EGL',r=>r._be,3]]},
+ tb:{t:'Tie beams and grade beams',s:'Bottom level blank = top of beam at underside of grade slab.',c:[['mk','Mark','t'],['ty','Type','s:Tie beam,Grade beam'],['nr','Nr','n'],['L','Clear length (m)','n'],['b','b (m)','n'],['D','D (m)','n'],['bot','Bottom level (m)','n']],
+   calc:[['Bottom used',r=>r._bot,3],['Exc. depth',r=>r._xd,3],['Below EGL',r=>r._be,3]]},
+ gs:{t:'Grade slab (slab on grade)',s:'Make-up fill is the gap between EGL and underside of sub-base.',c:[['ref','Ref','t'],['A','Area (m²)','n'],['P','Perimeter (m)','n'],['t','Thickness (m)','n'],['hc','Sub-base (m)','n']],
+   calc:[['Make-up fill (m)',r=>r._fill,3]]},
+ col:{t:'Columns',c:[['mk','Mark','t'],['fl','Floor','t'],['nr','Nr','n'],['b','b (m)','n'],['d','d (m)','n'],['h','Height (m)','n']]},
+ sw:{t:'Shear walls',c:[['mk','Mark','t'],['fl','Floor','t'],['nr','Nr','n'],['L','Length (m)','n'],['t','Thickness (m)','n'],['h','Height (m)','n']]},
+ bm:{t:'Beams — suspended floors and roof',s:'Measured net below the slab.',c:[['mk','Mark','t'],['fl','Floor','t'],['nr','Nr','n'],['L','Clear length (m)','n'],['b','b (m)','n'],['D','Overall depth (m)','n'],['st','Slab thk (m)','n']],
+   calc:[['Below slab',r=>r._net,3]]},
+ sl:{t:'Suspended slabs and roof slab',c:[['ref','Ref','t'],['fl','Floor','t'],['ty','Floor / Roof','s:Floor,Roof'],['A','Area (m²)','n'],['P','Edge perimeter (m)','n'],['t','Thickness (m)','n']]},
+ st:{t:'Stairs',c:[['mk','Mark','t'],['fl','Flights','n'],['w','Width (m)','n'],['Li','Inclined length / flight (m)','n'],['wt','Waist (m)','n'],['ri','Rise (m)','n'],['go','Going (m)','n'],['la','Landing area (m²)','n'],['lt','Landing thk (m)','n']],
+   calc:[['Avg thk',r=>r._av,3]]},
+ bt:{t:'Blockwork types',s:'Define each wall type once.',c:[['code','Code','t'],['desc','Description','t'],['t','Thickness (m)','n'],['pf','Faces plastered (0–2)','n'],['rf','Faces rendered (0–1)','n']]},
+ wl:{t:'Blockwork walls',s:'Length on centre line; height top of slab/beam to soffit above (blank = typical).',c:[['ref','Ref','t'],['fl','Floor','t'],['code','Type code','t'],['nr','Nr','n'],['L','Length (m)','n'],['h','Height (m)','n']],
+   calc:[['Gross m²',r=>r._ar,2]]},
+ op:{t:'Doors and windows',s:'Openings over the threshold are deducted from blockwork of the wall type named here.',c:[['mk','Mark','t'],['ty','Door / Window','s:Door,Window'],['desc','Description','t'],['w','W (m)','n'],['h','H (m)','n'],['nr','Nr','n'],['in','In wall type','t']],
+   calc:[['Deduct m²',r=>r._ded,2]]},
+ ff:{t:'Floor finish types',c:[['code','Code','t'],['desc','Description','t']]},
+ cl:{t:'Ceiling types',c:[['code','Code','t'],['desc','Description','t']]},
+ rm:{t:'Room finish schedule',c:[['rm','Room','t'],['fl','Floor','t'],['nr','Nr','n'],['A','Area (m²)','n'],['P','Perimeter (m)','n'],['ff','Floor finish','t'],['cl','Ceiling','t'],['wt','Wall tile ht (m)','n'],['sk','Skirting','s:Y,N']]},
+ cv:{t:'Civil and external works (manual items)',s:'Quantity = Nr × L (m), L×W (m²), L×W×D (m³) or Nr (nr).',c:[['sec','Section','s:34,35,36'],['desc','Description','t'],['u','Unit','s:m,m²,m³,nr'],['nr','Nr','n'],['L','L (m)','n'],['W','W (m)','n'],['D','D (m)','n']],
+   calc:[['Quantity',r=>r._q,2]]}
+};
+const PAGE1=[['kv','meta'],['kv','lv'],['kv','typ'],['tb','ft'],['tb','nk'],['tb','tb'],['tb','gs'],['tb','col'],['tb','sw'],['tb','bm'],['tb','sl'],['tb','st'],
+  ['tb','bt'],['tb','wl'],['tb','op'],['tb','ff'],['tb','cl'],['tb','rm'],['tb','cv'],['kv','spec'],['kv','rb']];
+
+/* ---------------- example project ---------------- */
+function rowsOf(keys,arr){return arr.map(a=>{const o={};keys.forEach((k,i)=>o[k]=a[i]===undefined?'':a[i]);return o;});}
+function example(){const c=k=>TB[k].c.map(x=>x[0]);return{v:VERSION,
+ meta:{name:'Example — G+1 office / store building',location:'Riyadh, KSA',client:'',drawings:'',standard:'RICS NRM2',currency:'SAR'},
+ lv:{GS_SSL:0,EGL:-0.45,BOF_def:-2,Blind_T:0.1,Blind_P:0.1,WorkSp:0.3,GS_T:0.15,Hc_T:0.2,Bulk:1.25,DedMin:0.5,SiteArea:2500,RoofUp:0.3},
+ typ:{Ft_L:2,Ft_W:2,Ft_D:0.6,Nk_b:0.4,Nk_d:0.4,TB_b:0.3,TB_D:0.6,Col_b:0.4,Col_d:0.4,Col_H:3.8,SW_t:0.25,SW_H:3.8,Bm_b:0.3,Bm_D:0.6,Slab_T:0.2,Wall_H:3},
+ spec:{Blind:'C15 plain concrete',Sub:'C35/45 sulphate-resisting concrete',Sup:'C40/50 concrete',Rebar:'high-yield deformed bars Grade 60 (ASTM A615)',
+  WPU:'1.5 mm self-adhesive bituminous membrane',WPA:'two coats bitumen-based waterproof coating',Poly:'polyethylene sheet 1000 gauge (0.25 mm)',
+  Hc:'graded sub-base material, compacted in 150 mm layers',Roof:'4 mm APP modified bitumen membrane',Ins:'50 mm extruded polystyrene board',
+  Plast:'20 mm cement:sand plaster in two coats',Rend:'20 mm cement:sand render in two coats',PaintI:'one coat sealer and two coats emulsion paint',
+  PaintE:'one coat primer and two coats exterior acrylic paint',WTile:'ceramic wall tiles 300 × 600 mm on adhesive',Skirt:'porcelain skirting 100 mm high'},
+ rb:{Ft:110,Nk:180,TB:140,GB:150,Col:190,SW:120,Bm:160,Slab:105,St:120},
+ t:{
+  ft:rowsOf(c('ft'),[['F1','Isolated',12,2.2,2.2,0.6],['F2','Isolated',8,1.8,1.8,0.6],['F3','Combined',2,4.5,2.2,0.7,-2.1],['SF1','Strip',1,40,0.8,0.4,-1.2]]),
+  nk:rowsOf(c('nk'),[['N1','F1',12,0.4,0.4],['N2','F2',8,0.35,0.35],['N3','F3',4,0.4,0.4]]),
+  tb:rowsOf(c('tb'),[['TB1','Tie beam',14,5.4,0.3,0.6],['TB2','Tie beam',10,4.6,0.3,0.6],['GB1','Grade beam',6,6,0.4,0.8]]),
+  gs:rowsOf(c('gs'),[['GS1',520,96]]),
+  col:rowsOf(c('col'),[['C1','Ground',20,0.4,0.4],['C2','Ground',4,0.3,0.6],['C1','First',20,0.4,0.4,3.3],['C2','First',4,0.3,0.6,3.3]]),
+  sw:rowsOf(c('sw'),[['SW1','Ground',2,3,0.25],['SW1','First',2,3,0.25,3.3]]),
+  bm:rowsOf(c('bm'),[['B1','First',16,5.6,0.3,0.6],['B2','First',12,4.6,0.3,0.5],['RB1','Roof',16,5.6,0.3,0.6],['RB2','Roof',12,4.6,0.3,0.5]]),
+  sl:rowsOf(c('sl'),[['S1','First','Floor',520,96],['R1','Roof','Roof',520,96]]),
+  st:rowsOf(c('st'),[['ST1',2,1.2,3.4,0.18,0.17,0.3,3.6,0.18]]),
+  bt:rowsOf(c('bt'),[['B20T','200 mm insulated thermal block, external walls',0.2,1,1],['B20E','200 mm hollow concrete block, parapets',0.2,1,1],
+     ['B20I','200 mm hollow concrete block, internal',0.2,2,0],['B15','150 mm hollow concrete block, internal',0.15,2,0],['B10','100 mm solid concrete block, internal',0.1,2,0]]),
+  wl:rowsOf(c('wl'),[['WL1','Ground','B20T',1,96,3.2],['WL2','First','B20T',1,96,2.8],['WL3','Parapet','B20E',1,96,1],['WL4','Ground','B15',1,60,3.2],
+     ['WL5','First','B15',1,55,2.8],['WL6','Ground','B10',1,18,3.2],['WL7','First','B20I',1,22,2.8]]),
+  op:rowsOf(c('op'),[['D1','Door','Single flush timber door with frame and ironmongery, 900 × 2100 mm',0.9,2.1,14,'B15'],
+     ['D2','Door','Steel external door with frame and ironmongery, 1200 × 2400 mm',1.2,2.4,3,'B20T'],
+     ['W1','Window','Aluminium double-glazed window, 1500 × 1500 mm',1.5,1.5,24,'B20T'],['W2','Window','Aluminium louvre, 600 × 600 mm',0.6,0.6,6,'B20T']]),
+  ff:rowsOf(c('ff'),[['FF1','Porcelain tiles 600 × 600 mm on 50 mm screed'],['FF2','Anti-slip ceramic tiles 300 × 300 mm on screed'],['FF3','Epoxy floor coating 3 mm']]),
+  cl:rowsOf(c('cl'),[['CL1','Suspended gypsum board ceiling'],['CL2','Moisture-resistant suspended gypsum ceiling'],['CL3','Skim coat and paint to concrete soffit']]),
+  rm:rowsOf(c('rm'),[['Offices','Ground',1,180,70,'FF1','CL1','','Y'],['Store','Ground',1,250,66,'FF3','CL3','','N'],['Toilets','Ground',2,12,14,'FF2','CL2',2.4,'N'],
+     ['Offices','First',1,420,110,'FF1','CL1','','Y'],['Toilets','First',2,12,14,'FF2','CL2',2.4,'N']]),
+  cv:rowsOf(c('cv'),[['34','uPVC drainage pipe 160 mm in trench n.e. 1.5 m deep, incl. bedding and backfill','m',1,85],['34','Precast concrete manhole 1000 mm dia, depth n.e. 1.5 m, with cover','nr',4],
+     ['35','Interlocking concrete paving 80 mm on 50 mm sand bed','m²',1,40,25],['35','Asphalt paving 50 mm wearing course on 200 mm base course','m²',1,60,30],
+     ['35','Precast concrete kerb 150 × 300 mm on concrete bed','m',1,130],['36','Boundary wall, 200 mm blockwork 2.4 m high on strip footing','m',1,210]])},
+ rates:{}};}
+function blankProject(){const e=example();
+  Object.keys(e.t).forEach(k=>e.t[k]=[]);
+  e.meta.name='';e.rates={};
+  Object.keys(e.lv).forEach(k=>{if(!['GS_SSL','Blind_T','Blind_P','WorkSp','Bulk','DedMin','RoofUp'].includes(k))e.lv[k]='';});
+  e.lv.EGL=0;e.lv.BOF_def=-1.5;e.lv.GS_T=0.15;e.lv.Hc_T=0.2;e.lv.SiteArea='';
+  return e;}
+
+let S=load()||example(), view='inputs', hideEmpty=true, RES=null;
+function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------------- measurement engine ---------------- */
+function compute(){
+  const L=S.lv,T=S.typ,P=S.spec,R=S.rb,t=S.t;
+  const tB=N(L.Blind_T),bp=N(L.Blind_P),ws=N(L.WorkSp),EGL=N(L.EGL),SSL=N(L.GS_SSL),GST=N(L.GS_T);
+  const has=r=>!blank(r.nr);
+  // derive "used" values on the rows themselves (prefixed _) so the input tables can show them
+  t.ft.forEach(r=>{r._L=U(r.L,N(T.Ft_L));r._W=U(r.W,N(T.Ft_W));r._D=U(r.D,N(T.Ft_D));r._B=U(r.bof,N(L.BOF_def));
+    r._xd=has(r)?Math.max(0,EGL-(r._B-tB)):0;});
+  t.nk.forEach(r=>{r._b=U(r.b,N(T.Nk_b));r._d=U(r.d,N(T.Nk_d));
+    const host=t.ft.find(x=>String(x.mk).trim().toUpperCase()===String(r.on).trim().toUpperCase());
+    const tof=host?host._B+host._D:N(L.BOF_def)+N(T.Ft_D);const top=U(r.top,SSL-GST);
+    r._h=has(r)?Math.max(0,top-tof):0;r._be=has(r)?Math.max(0,Math.min(top,EGL)-tof):0;});
+  t.tb.forEach(r=>{r._b=U(r.b,N(T.TB_b));r._D=U(r.D,N(T.TB_D));r._bot=U(r.bot,SSL-GST-r._D);
+    r._xd=has(r)?Math.max(0,EGL-(r._bot-tB)):0;r._be=has(r)?Math.max(0,Math.min(r._bot+r._D,EGL)-r._bot):0;});
+  t.gs.forEach(r=>{r._t=U(r.t,GST);r._hc=U(r.hc,N(L.Hc_T));r._fill=blank(r.A)?0:Math.max(0,(SSL-r._t-r._hc)-EGL);});
+  t.col.forEach(r=>{r._b=U(r.b,N(T.Col_b));r._d=U(r.d,N(T.Col_d));r._h=U(r.h,N(T.Col_H));});
+  t.sw.forEach(r=>{r._t=U(r.t,N(T.SW_t));r._h=U(r.h,N(T.SW_H));});
+  t.bm.forEach(r=>{r._b=U(r.b,N(T.Bm_b));r._D=U(r.D,N(T.Bm_D));r._net=Math.max(0,r._D-U(r.st,N(T.Slab_T)));});
+  t.sl.forEach(r=>{r._t=U(r.t,N(T.Slab_T));});
+  t.st.forEach(r=>{const ri=N(r.ri),go=N(r.go);r._av=blank(r.fl)?0:N(r.wt)+(ri&&go?ri*go/(2*Math.hypot(ri,go)):0);});
+  t.wl.forEach(r=>{r._ar=has(r)?N(r.nr)*N(r.L)*U(r.h,N(T.Wall_H)):0;});
+  t.op.forEach(r=>{const ea=N(r.w)*N(r.h);r._ded=has(r)&&ea>N(L.DedMin)?N(r.nr)*ea:0;});
+  t.cv.forEach(r=>{const u=r.u;r._q=!has(r)?0:N(r.nr)*(u==='nr'?1:u==='m'?N(r.L):u==='m²'?N(r.L)*N(r.W):u==='m³'?N(r.L)*N(r.W)*N(r.D):0);});
+
+  const secs=[];let cur;
+  const sec=(code,title,note)=>{cur={code,title,note,items:[]};secs.push(cur);};
+  const ln=(lab,...d)=>({lab,d,q:d.some(x=>x!=null)?d.reduce((a,x)=>x==null?a:a*x,1):0});
+  const item=(ref,desc,unit,lines,why,bill=true)=>{lines=lines.filter(l=>l&&Math.abs(l.q)>1e-12);
+    const it={ref,desc,unit,lines,why:why||'',bill,qty:lines.reduce((a,l)=>a+l.q,0)};cur.items.push(it);return it.qty;};
+  const nm=(...x)=>x.filter(v=>!blank(v)).join(' ');
+  const kind=(r,k)=>r.ty===k;
+
+  sec('05','Excavating and filling','Excavation from EGL to underside of blinding (BOF − blinding), with working space each side.');
+  item('5.01','Site clearance, remove vegetation and debris','m²',[ln('Site area',1,N(L.SiteArea))]);
+  const excF=item('5.02','Excavation for footings, from existing ground level to bottom of blinding','m³',
+    t.ft.filter(has).map(r=>ln(nm(r.mk,r.ty),N(r.nr),r._L+2*bp+2*ws,r._W+2*bp+2*ws,r._xd)),'Footing + 2 × blinding projection + 2 × working space');
+  const excB=item('5.03','Excavation for tie beams and grade beams, trenches, from existing ground level to bottom of blinding','m³',
+    t.tb.filter(has).map(r=>ln(nm(r.mk,r.ty),N(r.nr),N(r.L),r._b+2*bp+2*ws,r._xd)),'Clear length; overlap with footing pits not deducted');
+  item('5.04','Imported granular fill to make up levels under grade slab, compacted in layers','m³',t.gs.map(r=>ln(r.ref,1,N(r.A),null,r._fill)));
+  item('5.05','Sub-base under grade slab: '+P.Hc,'m³',t.gs.map(r=>ln(r.ref,1,N(r.A),null,r._hc)));
+  item('5.06','Compaction of formation under grade slab','m²',t.gs.map(r=>ln(r.ref,1,N(r.A))));
+  // concrete quantities needed for backfill
+  const blAF=t.ft.filter(has).reduce((a,r)=>a+N(r.nr)*(r._L+2*bp)*(r._W+2*bp),0);
+  const blAB=t.tb.filter(has).reduce((a,r)=>a+N(r.nr)*N(r.L)*(r._b+2*bp),0);
+  const cF=t.ft.filter(has).reduce((a,r)=>a+N(r.nr)*r._L*r._W*r._D,0);
+  const tbBelow=t.tb.filter(has).reduce((a,r)=>a+N(r.nr)*N(r.L)*r._b*r._be,0);
+  const bfF=item('5.07','Backfilling around footings and necks with selected excavated material, compacted in layers','m³',
+    [ln('Footing excavation',1,excF),ln('Deduct blinding under footings',-1,blAF,null,tB),ln('Deduct footing concrete',-1,cF)]
+    .concat(t.nk.filter(has).map(r=>ln('Deduct neck below EGL '+nm(r.mk),-N(r.nr),r._b,r._d,r._be))),'Excavation − blinding − footing − neck below EGL');
+  const bfB=item('5.08','Backfilling around tie beams and grade beams with selected excavated material, compacted in layers','m³',
+    [ln('Beam trench excavation',1,excB),ln('Deduct blinding under beams',-1,blAB,null,tB),ln('Deduct beam concrete below EGL',-1,tbBelow)]);
+  item('5.09','Disposal of surplus excavated material off site, bulked','m³',
+    [ln('Footing excavation',1,excF,N(L.Bulk)),ln('Beam trench excavation',1,excB,N(L.Bulk)),ln('Less backfill around footings',-1,bfF,N(L.Bulk)),ln('Less backfill around beams',-1,bfB,N(L.Bulk))],'(Excavated − backfilled) × bulking');
+  item('5.10','Anti-termite soil treatment to formation under grade slab and footings','m²',
+    t.gs.map(r=>ln(r.ref,1,N(r.A))).concat(t.ft.filter(has).map(r=>ln(r.mk,N(r.nr),r._L+2*bp,r._W+2*bp))));
+
+  sec('11C','In-situ concrete','Concrete measured net. Blinding billed by area stating thickness.');
+  const mm=Math.round(tB*1000);
+  item('11.01',`Blinding, ${P.Blind}, ${mm} mm thick, under footings`,'m²',t.ft.filter(has).map(r=>ln(r.mk,N(r.nr),r._L+2*bp,r._W+2*bp)),'Volume '+f(blAF*tB,2)+' m³');
+  item('11.02',`Blinding, ${P.Blind}, ${mm} mm thick, under tie beams and grade beams`,'m²',t.tb.filter(has).map(r=>ln(r.mk,N(r.nr),N(r.L),r._b+2*bp)),'Volume '+f(blAB*tB,2)+' m³');
+  const q={};
+  q.F=item('11.03',`Reinforced concrete ${P.Sub} in footings`,'m³',t.ft.filter(has).map(r=>ln(nm(r.mk,r.ty),N(r.nr),r._L,r._W,r._D)));
+  q.N=item('11.04',`Reinforced concrete ${P.Sub} in necks / stub columns`,'m³',t.nk.filter(has).map(r=>ln(r.mk,N(r.nr),r._b,r._d,r._h)),'Top level − top of footing');
+  q.T=item('11.05',`Reinforced concrete ${P.Sub} in tie beams`,'m³',t.tb.filter(r=>has(r)&&kind(r,'Tie beam')).map(r=>ln(r.mk,N(r.nr),N(r.L),r._b,r._D)));
+  q.G=item('11.06',`Reinforced concrete ${P.Sub} in grade beams`,'m³',t.tb.filter(r=>has(r)&&kind(r,'Grade beam')).map(r=>ln(r.mk,N(r.nr),N(r.L),r._b,r._D)));
+  item('11.07',`Reinforced concrete ${P.Sub} in grade slab (slab on grade)`,'m³',t.gs.map(r=>ln(r.ref,1,N(r.A),null,r._t)));
+  q.C=item('11.08',`Reinforced concrete ${P.Sup} in columns`,'m³',t.col.filter(has).map(r=>ln(nm(r.mk,r.fl),N(r.nr),r._b,r._d,r._h)));
+  q.W=item('11.09',`Reinforced concrete ${P.Sup} in shear walls`,'m³',t.sw.filter(has).map(r=>ln(nm(r.mk,r.fl),N(r.nr),N(r.L),r._t,r._h)));
+  q.B=item('11.10',`Reinforced concrete ${P.Sup} in beams, measured below slab`,'m³',t.bm.filter(has).map(r=>ln(nm(r.mk,r.fl),N(r.nr),N(r.L),r._b,r._net)));
+  q.SF=item('11.11',`Reinforced concrete ${P.Sup} in suspended floor slabs`,'m³',t.sl.filter(r=>r.ty==='Floor').map(r=>ln(nm(r.ref,r.fl),1,N(r.A),null,r._t)));
+  q.SR=item('11.12',`Reinforced concrete ${P.Sup} in roof slab`,'m³',t.sl.filter(r=>r.ty==='Roof').map(r=>ln(nm(r.ref,r.fl),1,N(r.A),null,r._t)));
+  q.ST=item('11.13',`Reinforced concrete ${P.Sup} in stairs and landings`,'m³',t.st.filter(r=>!blank(r.fl)).flatMap(r=>[ln('Flights '+r.mk,N(r.fl),N(r.w),N(r.Li),r._av),ln('Landings '+r.mk,1,N(r.la),null,N(r.lt))]));
+
+  sec('11F','Formwork','Contact area of concrete against formwork.');
+  item('11.20','Formwork to sides of footings','m²',t.ft.filter(has).map(r=>ln(r.mk,N(r.nr),2*(r._L+r._W),null,r._D)));
+  item('11.21','Formwork to sides of necks','m²',t.nk.filter(has).map(r=>ln(r.mk,N(r.nr),2*(r._b+r._d),null,r._h)));
+  item('11.22','Formwork to sides of tie beams and grade beams','m²',t.tb.filter(has).map(r=>ln(r.mk,2*N(r.nr),N(r.L),null,r._D)));
+  item('11.23','Formwork to edges of grade slab','m²',t.gs.map(r=>ln(r.ref,1,N(r.P),null,r._t)));
+  item('11.24','Formwork to columns','m²',t.col.filter(has).map(r=>ln(nm(r.mk,r.fl),N(r.nr),2*(r._b+r._d),null,r._h)));
+  item('11.25','Formwork to shear walls, both faces and ends','m²',t.sw.filter(has).map(r=>ln(nm(r.mk,r.fl),N(r.nr),2*(N(r.L)+r._t),null,r._h)));
+  item('11.26','Formwork to sides and soffits of beams','m²',t.bm.filter(has).flatMap(r=>[ln('Sides '+r.mk,2*N(r.nr),N(r.L),null,r._net),ln('Soffit '+r.mk,N(r.nr),N(r.L),r._b)]));
+  item('11.27','Formwork to soffits of suspended floor and roof slabs','m²',t.sl.map(r=>ln(nm(r.ref,r.fl),1,N(r.A))),'Enter net slab area on page 1 if beam soffits are to be excluded');
+  item('11.28','Formwork to edges of suspended slabs','m²',t.sl.map(r=>ln(nm(r.ref,r.fl),1,N(r.P),null,r._t)));
+  item('11.29','Formwork to soffits of stair flights and landings','m²',t.st.filter(r=>!blank(r.fl)).flatMap(r=>[ln('Flights '+r.mk,N(r.fl),N(r.w),N(r.Li)),ln('Landings '+r.mk,1,N(r.la))]));
+
+  sec('11R','Reinforcement','ESTIMATED from kg/m³ densities on page 1 — replace with bar-bending schedule totals.');
+  const rb=(ref,what,arr)=>item(ref,`${what}: ${P.Rebar}`,'kg',arr.map(([l,c,d])=>ln(l,1,c,N(d))),'Concrete m³ × kg/m³');
+  rb('11.40','Reinforcement in footings and necks',[['Footings',q.F,R.Ft],['Necks',q.N,R.Nk]]);
+  rb('11.41','Reinforcement in tie beams and grade beams',[['Tie beams',q.T,R.TB],['Grade beams',q.G,R.GB]]);
+  rb('11.42','Reinforcement in columns and shear walls',[['Columns',q.C,R.Col],['Shear walls',q.W,R.SW]]);
+  rb('11.43','Reinforcement in beams',[['Beams',q.B,R.Bm]]);
+  rb('11.44','Reinforcement in suspended and roof slabs',[['Floor slabs',q.SF,R.Slab],['Roof slab',q.SR,R.Slab]]);
+  rb('11.45','Reinforcement in stairs',[['Stairs',q.ST,R.St]]);
+  item('11.46','Steel fabric reinforcement A252 in grade slab','m²',t.gs.map(r=>ln(r.ref,1,N(r.A))));
+
+  sec('14','Masonry','Net area by wall type; openings over the threshold deducted from the type named in the door/window schedule.');
+  let plaster=0,render=0;
+  t.bt.forEach((b,i)=>{if(blank(b.code))return;
+    const code=String(b.code).trim();
+    const lines=t.wl.filter(w=>String(w.code).trim()===code&&has(w)).map(w=>ln(nm(w.ref,w.fl),N(w.nr),N(w.L),null,U(w.h,N(T.Wall_H))))
+      .concat(t.op.filter(o=>String(o.in).trim()===code&&o._ded>0).map(o=>ln('Deduct '+nm(o.mk,o.ty),-N(o.nr),N(o.w),null,N(o.h))));
+    const net=item('14.'+String(i+1).padStart(2,'0'),`Blockwork: ${b.desc} in cement:sand mortar`,'m²',lines);
+    plaster+=net*N(b.pf);render+=net*N(b.rf);});
+
+  sec('19','Waterproofing and roof insulation','Underground waterproofing to parts of the substructure below existing ground level.');
+  item('19.01','Waterproofing under footings, horizontal, on blinding: '+P.WPU,'m²',t.ft.filter(has).map(r=>ln(r.mk,N(r.nr),r._L,r._W)));
+  item('19.02','Waterproofing around footings, sides and top: '+P.WPA,'m²',
+    t.ft.filter(has).flatMap(r=>[ln('Sides '+r.mk,N(r.nr),2*(r._L+r._W),null,r._D),ln('Top '+r.mk,N(r.nr),r._L,r._W)])
+     .concat(t.nk.filter(has).map(r=>ln('Deduct neck plan '+r.mk,-N(r.nr),r._b,r._d))),'Separate from the membrane under the footing');
+  item('19.03','Waterproofing to sides of necks below ground: '+P.WPA,'m²',t.nk.filter(has).map(r=>ln(r.mk,N(r.nr),2*(r._b+r._d),null,r._be)));
+  item('19.04','Waterproofing under tie beams and grade beams, on blinding: '+P.WPU,'m²',t.tb.filter(has).map(r=>ln(r.mk,N(r.nr),N(r.L),r._b)));
+  item('19.05','Waterproofing to sides of tie beams and grade beams below ground: '+P.WPA,'m²',t.tb.filter(has).map(r=>ln(r.mk,2*N(r.nr),N(r.L),null,r._be)));
+  item('19.06','Damp-proof membrane under grade slab: '+P.Poly,'m²',t.gs.map(r=>ln(r.ref,1,N(r.A))),'Net area; laps in the rate');
+  const roofs=t.sl.filter(r=>r.ty==='Roof');
+  item('19.07','Roof waterproofing: '+P.Roof,'m²',roofs.flatMap(r=>[ln(r.ref,1,N(r.A)),ln('Upstand '+r.ref,1,N(r.P),null,N(L.RoofUp))]));
+  item('31.01','Roof thermal insulation: '+P.Ins,'m²',roofs.map(r=>ln(r.ref,1,N(r.A))));
+
+  sec('23','Windows, screens and lights','From the door and window schedule.');
+  t.op.forEach((o,i)=>{if(o.ty==='Window'&&has(o))item('23.'+String(i+1).padStart(2,'0'),o.desc||o.mk,'nr',[ln(o.mk,N(o.nr))]);});
+  sec('24','Doors, shutters and hatches','From the door and window schedule.');
+  t.op.forEach((o,i)=>{if(o.ty==='Door'&&has(o))item('24.'+String(i+1).padStart(2,'0'),o.desc||o.mk,'nr',[ln(o.mk,N(o.nr))]);});
+
+  sec('28','Floor, wall and ceiling finishings','Walls from masonry; floors, skirting and wall tiling from the room schedule.');
+  item('28.01','Internal walls: '+P.Plast,'m²',[ln('Net wall area × plastered faces',1,plaster)]);
+  item('28.02','External walls: '+P.Rend,'m²',[ln('Net wall area × rendered faces',1,render)]);
+  t.ff.forEach((x,i)=>{if(blank(x.code))return;item('28.'+(10+i),`Floor finish ${x.code}: ${x.desc}`,'m²',
+    t.rm.filter(r=>String(r.ff).trim()===String(x.code).trim()).map(r=>ln(nm(r.rm,r.fl),N(r.nr),N(r.A))));});
+  item('28.20','Skirting: '+P.Skirt,'m',t.rm.filter(r=>r.sk==='Y').map(r=>ln(nm(r.rm,r.fl),N(r.nr),N(r.P))),'Door openings not deducted');
+  const wt=item('28.21','Wall tiling: '+P.WTile,'m²',t.rm.filter(r=>N(r.wt)>0).map(r=>ln(nm(r.rm,r.fl),N(r.nr),N(r.P),null,N(r.wt))));
+
+  sec('29','Decoration','Internal paint excludes wall-tiled areas.');
+  item('29.01','Internal walls: '+P.PaintI,'m²',[ln('Plastered walls',1,plaster),ln('Deduct wall tiling',-1,wt)]);
+  item('29.02','External walls: '+P.PaintE,'m²',[ln('Rendered walls',1,render)]);
+
+  sec('30','Suspended ceilings','From the room schedule.');
+  t.cl.forEach((x,i)=>{if(blank(x.code))return;item('30.'+String(i+1).padStart(2,'0'),`Ceiling ${x.code}: ${x.desc}`,'m²',
+    t.rm.filter(r=>String(r.cl).trim()===String(x.code).trim()).map(r=>ln(nm(r.rm,r.fl),N(r.nr),N(r.A))));});
+
+  sec('34-36','Drainage, site works and fencing','Manual items from page 1.');
+  t.cv.forEach((r,i)=>{if(has(r)||!blank(r.desc))item(`${r.sec||'35'}.${String(i+1).padStart(2,'0')}`,r.desc||'(no description)',r.u||'nr',[ln('As scheduled',1,r._q)]);});
+  return secs;
+}
+
+/* ---------------- views ---------------- */
+const NAV=[['Set up',[['inputs','Page 1 — Inputs']]],
+  ['Take-off',[['05','05 Excavation & filling'],['11C','11 Concrete'],['11F','11 Formwork'],['11R','11 Reinforcement'],['14','14 Masonry'],['19','19 Waterproofing'],
+   ['23','23 Windows'],['24','24 Doors'],['28','28 Finishings'],['29','29 Decoration'],['30','30 Ceilings'],['34-36','34–36 Civil & external']]],
+  ['Output',[['boq','Bill of quantities'],['file','Save, open & export']]]];
+const secByCode=c=>RES.find(s=>s.code===c);
+function render(){RES=compute();renderNav();const m=$('#main');m.innerHTML='';
+  const v=view==='inputs'?vInputs():view==='boq'?vBoq():view==='file'?vFile():vSection(secByCode(view));m.append(v);}
+function go(v){view=v;render();window.scrollTo(0,0);}
+function renderNav(){const n=$('#rail');n.innerHTML='';
+  n.append(el('div',{class:'brand'},el('b',{},'BE'),el('div',{},el('strong',{},'BidEst QTO'),el('small',{},'NRM2 take-off & bill'))));
+  NAV.forEach(([g,items])=>{n.append(el('div',{class:'navgrp'},g));
+    items.forEach(([id,l])=>{let c='';const s=RES.find(x=>x.code===id);if(s)c=s.items.filter(i=>i.bill&&Math.abs(i.qty)>1e-9).length||'';
+      n.append(el('button',{class:'nav'+(view===id?' on':''),onclick:()=>go(id)},el('span',{},l),el('span',{class:'c'},c)));});});
+}
+function topbar(title,sub,extra){
+  const tot=boqTotal();
+  return el('div',{class:'top'},el('div',{},el('h1',{},title),sub?el('p',{},sub):null),
+    el('div',{class:'kpis'},
+      kpi(f(sumUnit('m³',['11C']),1)+' m³','Concrete'),kpi(f(sumUnit('kg',['11R'])/1000,2)+' t','Reinforcement'),
+      kpi(f(sumUnit('m²',['14']),0)+' m²','Blockwork'),kpi(tot?f(tot,0):'–',(S.meta.currency||'SAR')+' priced'),extra||null));}
+const kpi=(v,l)=>el('div',{class:'kpi'},el('b',{},v),el('span',{},l));
+function sumUnit(u,codes){return RES.filter(s=>codes.includes(s.code)).flatMap(s=>s.items).filter(i=>i.bill&&i.unit===u).reduce((a,i)=>a+i.qty,0);}
+
+/* page 1 */
+function vInputs(){const w=el('div',{});
+  w.append(topbar('Page 1 — main inputs and schedules','Type in the yellow cells. Leave a size blank to use its typical value. Every work-section page reads from here.'));
+  PAGE1.forEach(([k,id])=>w.append(k==='kv'?kvCard(id):tbCard(id)));return w;}
+function kvCard(id){const d=KV[id],o=S[id];
+  return el('section',{class:'card'},el('header',{},el('h2',{},d.t),d.s?el('span',{},d.s):null),
+    el('div',{class:'pad kv'},d.f.map(([k,l,ty])=>el('label',{},l,
+      el('input',{class:ty==='t'?'':'n',value:o[k]==null?'':o[k],inputmode:ty==='t'?null:'decimal',
+        onchange:e=>{o[k]=ty==='t'?e.target.value:(num(e.target.value)===null?'':num(e.target.value));save();render();}})))));}
+function tbCard(id){const d=TB[id],rows=S.t[id];
+  const head=el('tr',{},d.c.map(c=>el('th',{class:c[2]==='n'?'n':''},c[1])),(d.calc||[]).map(c=>el('th',{class:'n'},c[0])),el('th',{},''));
+  const body=el('tbody',{},rows.map((r,i)=>el('tr',{},
+    d.c.map(([k,h,ty])=>{
+      if(ty.startsWith('s:')){const s=el('select',{onchange:e=>{r[k]=e.target.value;save();render();}},el('option',{value:''},'—'),
+        ty.slice(2).split(',').map(o=>el('option',{value:o,selected:String(r[k])===o},o)));return el('td',{},s);}
+      return el('td',{class:k==='desc'?'desc':''},el('input',{class:ty==='n'?'n':'',value:r[k]==null?'':r[k],inputmode:ty==='n'?'decimal':null,
+        'aria-label':h,onchange:e=>{r[k]=ty==='n'?(num(e.target.value)===null?'':num(e.target.value)):e.target.value;save();render();}}));}),
+    (d.calc||[]).map(([h,fn,dp])=>el('td',{class:'n calc'},f(fn(r),dp))),
+    el('td',{},el('div',{class:'row',style:'flex-wrap:nowrap;gap:0'},
+      el('button',{class:'btn x',title:'Duplicate row',onclick:()=>{rows.splice(i+1,0,clean(r));save();render();}},'⧉'),
+      el('button',{class:'btn x',title:'Delete row',onclick:()=>{rows.splice(i,1);save();render();}},'×'))))));
+  return el('section',{class:'card'},el('header',{},el('h2',{},d.t),d.s?el('span',{},d.s):null),
+    el('div',{class:'pad'},rows.length?el('div',{class:'tw'},el('table',{},el('thead',{},head),body)):el('div',{class:'empty'},'No rows yet'),
+      el('div',{class:'row',style:'margin-top:10px'},el('button',{class:'btn',onclick:()=>{const o={};d.c.forEach(c=>o[c[0]]='');rows.push(o);save();render();}},'+ Add row'),
+        el('span',{class:'note',style:'margin:0'},rows.length+' row'+(rows.length===1?'':'s')))));}
+function clean(r){const o={};Object.keys(r).forEach(k=>{if(!k.startsWith('_'))o[k]=r[k];});return o;}
+
+/* section dimension sheets */
+function vSection(s){const w=el('div',{});
+  w.append(topbar(s.code.replace(/[CFR]$/,'')+' '+s.title,s.note));
+  if(s.code==='11R')w.append(el('div',{class:'flag'},'Reinforcement here is estimated from densities, not scheduled. Treat as a high-risk quantity until bar-bending schedules are available.'));
+  const tb=el('tbody',{});
+  s.items.forEach(it=>{
+    tb.append(el('tr',{class:'item'},el('td',{},it.ref),el('td',{},it.desc,it.why?el('div',{class:'why'},it.why):null),el('td',{},it.unit),
+      el('td',{}),el('td',{}),el('td',{}),el('td',{}),el('td',{})));
+    if(!it.lines.length)tb.append(el('tr',{class:'line'},el('td',{}),el('td',{colspan:7,class:'why'},'Nothing scheduled on page 1')));
+    it.lines.forEach(l=>tb.append(el('tr',{class:'line'},el('td',{}),el('td',{},l.lab),el('td',{}),
+      ...l.d.concat([null,null,null,null]).slice(0,4).map(x=>el('td',{class:'n'},x==null?'':f(x,3))),el('td',{class:'n'},f(l.q,3)))));
+    tb.append(el('tr',{class:'tot'},el('td',{}),el('td',{},it.bill?'Total carried to BOQ':'Total'),el('td',{},it.unit),el('td',{}),el('td',{}),el('td',{}),el('td',{}),
+      el('td',{class:'n'},f(it.qty,['nr','kg'].includes(it.unit)?0:2))));});
+  w.append(el('section',{class:'card'},el('div',{class:'tw'},el('table',{},
+    el('thead',{},el('tr',{},['Ref','Description / dimension line','Unit'].map(h=>el('th',{},h)),['Times','Length','Width','Depth / Ht','Quantity'].map(h=>el('th',{class:'n'},h)))),tb))));
+  return w;}
+
+/* BOQ */
+function boqItems(){return RES.flatMap(s=>s.items.filter(i=>i.bill).map(i=>({...i,sec:s})));}
+const rq=i=>{const d=['nr','kg'].includes(i.unit)?0:2;return Math.round(i.qty*10**d)/10**d;};
+function boqTotal(){return boqItems().reduce((a,i)=>a+rq(i)*N(S.rates[i.ref+'|'+i.unit]),0);}
+function vBoq(){const w=el('div',{});const cur=S.meta.currency||'SAR';
+  w.append(topbar('Bill of quantities',(S.meta.name||'Untitled project')+' — measured to '+(S.meta.standard||'RICS NRM2')+'. Enter rates in '+cur+'.',
+    el('label',{class:'row noprint',style:'font-size:12px;color:var(--ink2)'},el('input',{type:'checkbox',checked:hideEmpty,onchange:e=>{hideEmpty=e.target.checked;render();}}),'Hide empty items')));
+  const tb=el('tbody',{});const sums=[];
+  RES.forEach(s=>{const items=s.items.filter(i=>i.bill&&(!hideEmpty||Math.abs(i.qty)>1e-9));if(!items.length)return;
+    tb.append(el('tr',{class:'item'},el('td',{}),el('td',{colspan:5},s.code.replace(/[CFR]$/,'')+' '+s.title.toUpperCase())));
+    let st=0;
+    items.forEach(i=>{const k=i.ref+'|'+i.unit,q=rq(i),rate=S.rates[k];const amt=q*N(rate);st+=amt;
+      const amtCell=el('td',{class:'n'},f(amt,2));
+      tb.append(el('tr',{},el('td',{},i.ref),el('td',{},i.desc),el('td',{},i.unit),el('td',{class:'n'},f(q,['nr','kg'].includes(i.unit)?0:2)),
+        el('td',{style:'width:110px'},el('input',{class:'n',value:rate==null?'':rate,inputmode:'decimal','aria-label':'Rate '+i.ref,
+          oninput:e=>{S.rates[k]=num(e.target.value)===null?'':num(e.target.value);amtCell.textContent=f(q*N(S.rates[k]),2);},
+          onchange:()=>{save();render();}})),amtCell));});
+    sums.push([s,st]);
+    tb.append(el('tr',{class:'tot'},el('td',{}),el('td',{colspan:4},'Total carried to summary'),el('td',{class:'n'},f(st,2))));});
+  w.append(el('section',{class:'card'},el('div',{class:'tw'},el('table',{class:'boq'},el('thead',{},el('tr',{},['Item','Description','Unit'].map(h=>el('th',{},h)),
+    el('th',{class:'n'},'Quantity'),el('th',{class:'n'},'Rate'),el('th',{class:'n'},'Amount ('+cur+')'))),tb))));
+  w.append(el('section',{class:'card'},el('header',{},el('h2',{},'Summary')),el('div',{class:'tw'},el('table',{},el('tbody',{},
+    sums.map(([s,v])=>el('tr',{},el('td',{},s.code.replace(/[CFR]$/,'')+' '+s.title),el('td',{class:'n'},f(v,2)))),
+    el('tr',{class:'tot'},el('td',{},'Total measured works (excl. preliminaries, OH&P, contingency, VAT)'),el('td',{class:'n'},f(sums.reduce((a,x)=>a+x[1],0),2))))))));
+  return w;}
+
+/* file */
+function vFile(){const w=el('div',{});
+  w.append(topbar('Save, open and export','Your project is kept in this browser automatically. Save a .json file to back it up or move it to another computer.'));
+  w.append(el('section',{class:'card'},el('header',{},el('h2',{},'Project file')),el('div',{class:'pad row'},
+    el('button',{class:'btn pri',onclick:saveJson},'Save project (.json)'),
+    el('button',{class:'btn',onclick:()=>$('#fileIn').click()},'Open project (.json)'),
+    el('button',{class:'btn',onclick:()=>{if(confirm('Load the worked example? The current project will be replaced.')){S=example();save();go('inputs');}}},'Load worked example'),
+    el('button',{class:'btn',onclick:()=>{if(confirm('Start a blank project? Everything not saved to a file will be lost.')){S=blankProject();save();go('inputs');}}},'New blank project'))));
+  w.append(el('section',{class:'card'},el('header',{},el('h2',{},'Export'),el('span',{},'Excel holds the BOQ and every dimension sheet as values')),el('div',{class:'pad row'},
+    el('button',{class:'btn pri',onclick:exportXlsx},'Export to Excel (.xlsx)'),
+    el('button',{class:'btn',onclick:exportCsv},'Export BOQ (.csv)'),
+    el('button',{class:'btn',onclick:()=>{go('boq');setTimeout(()=>window.print(),300);}},'Print BOQ'))));
+  w.append(el('section',{class:'card'},el('header',{},el('h2',{},'About')),el('div',{class:'pad'},
+    el('p',{class:'note'},'BidEst QTO v'+VERSION+' — quantity take-off to RICS NRM2. Quantities are only as good as the dimensions entered; reinforcement from densities is an estimate. Check against drawings before tender.'))));
+  return w;}
+function download(name,blob){const a=el('a',{href:URL.createObjectURL(blob),download:name});document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+const fname=ext=>(S.meta.name||'bidest-qto').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slice(0,60)+ext;
+function saveJson(){const o=JSON.parse(JSON.stringify(S,(k,v)=>k.startsWith('_')?undefined:v));download(fname('.json'),new Blob([JSON.stringify(o,null,1)],{type:'application/json'}));toast('Project saved');}
+$('#fileIn').addEventListener('change',e=>{const fl=e.target.files[0];if(!fl)return;const rd=new FileReader();
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);const base=example();
+    S=Object.assign(base,o);S.t=Object.assign(Object.fromEntries(Object.keys(TB).map(k=>[k,[]])),o.t||{});S.rates=o.rates||{};
+    save();go('inputs');toast('Project opened');}catch(err){alert('That file could not be read as a BidEst QTO project.');}};
+  rd.readAsText(fl);e.target.value='';});
+function boqRows(){const rows=[['Item','Description','Unit','Quantity','Rate','Amount']];
+  RES.forEach(s=>{const it=s.items.filter(i=>i.bill&&Math.abs(i.qty)>1e-9);if(!it.length)return;rows.push(['',s.code.replace(/[CFR]$/,'')+' '+s.title.toUpperCase()]);
+    it.forEach(i=>{const q=rq(i),r=N(S.rates[i.ref+'|'+i.unit]);rows.push([i.ref,i.desc,i.unit,q,r||'',r?Math.round(q*r*100)/100:'']);});});
+  rows.push([]);rows.push(['','TOTAL MEASURED WORKS','','','',Math.round(boqTotal()*100)/100]);return rows;}
+function exportCsv(){const csv=boqRows().map(r=>r.map(c=>{const s=String(c==null?'':c);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\n');
+  download(fname('-BOQ.csv'),new Blob(['\ufeff'+csv],{type:'text/csv'}));toast('BOQ exported');}
+function exportXlsx(){if(typeof XLSX==='undefined'){alert('The Excel library could not load (no internet?). Use Export BOQ (.csv) instead.');return;}
+  const wb=XLSX.utils.book_new();
+  const boq=XLSX.utils.aoa_to_sheet([[S.meta.name||'BidEst QTO'],[S.meta.location||''],[]].concat(boqRows()));
+  boq['!cols']=[{wch:8},{wch:70},{wch:6},{wch:12},{wch:10},{wch:14}];XLSX.utils.book_append_sheet(wb,boq,'BOQ');
+  RES.forEach(s=>{const a=[[s.code.replace(/[CFR]$/,'')+' '+s.title],[s.note],[],['Ref','Description / dimension line','Unit','Times','Length','Width','Depth/Ht','Quantity']];
+    s.items.forEach(i=>{a.push([i.ref,i.desc,i.unit]);i.lines.forEach(l=>a.push(['',l.lab,'',...l.d.concat([null,null,null,null]).slice(0,4).map(x=>x==null?'':Math.round(x*1000)/1000),Math.round(l.q*1000)/1000]));
+      a.push(['','Total','' ,'','','','',Math.round(i.qty*100)/100]);a.push([]);});
+    const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=[{wch:8},{wch:60},{wch:6},{wch:9},{wch:9},{wch:9},{wch:9},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,(s.code+' '+s.title).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,31));});
+  XLSX.writeFile(wb,fname('.xlsx'));toast('Excel exported');}
+
+render();
+</script>
+</body>
+</html>
